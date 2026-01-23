@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>二维码生成器</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 900px;
+            width: 100%;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+            padding: 40px;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                grid-template-columns: 1fr;
+                padding: 20px;
+            }
+        }
+
+        h1 {
+            grid-column: 1 / -1;
+            text-align: center;
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 28px;
+        }
+
+        .panel {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        label {
+            font-weight: 600;
+            color: #555;
+            font-size: 14px;
+        }
+
+        textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 14px;
+            resize: vertical;
+            min-height: 100px;
+            transition: border-color 0.3s;
+        }
+
+        textarea:focus, input:focus, select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        input[type="text"],
+        input[type="number"],
+        select {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+
+        input[type="color"] {
+            width: 100%;
+            height: 40px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+
+        .row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        button {
+            padding: 14px 24px;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-generate {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-generate:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-download {
+            background: #28a745;
+            color: white;
+            display: none;
+        }
+
+        .btn-download:hover {
+            background: #218838;
+        }
+
+        .preview {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 30px;
+            min-height: 350px;
+        }
+
+        .preview img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 10px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .preview-text {
+            color: #999;
+            font-size: 14px;
+            text-align: center;
+        }
+
+        .error {
+            color: #dc3545;
+            font-size: 14px;
+            text-align: center;
+            padding: 10px;
+            background: #f8d7da;
+            border-radius: 8px;
+            display: none;
+        }
+
+        .hint {
+            font-size: 12px;
+            color: #999;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>二维码生成器</h1>
+
+        <div class="panel">
+            <div class="form-group">
+                <label for="data">内容</label>
+                <textarea id="data" placeholder="输入网址、文本或任意内容...">https://github.com</textarea>
+            </div>
+
+            <div class="row">
+                <div class="form-group">
+                    <label for="size">尺寸</label>
+                    <input type="number" id="size" value="300" min="100" max="1000">
+                </div>
+                <div class="form-group">
+                    <label for="border">边距</label>
+                    <input type="number" id="border" value="4" min="0" max="10">
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="form-group">
+                    <label for="fill_color">前景色</label>
+                    <input type="color" id="fill_color" value="#000000">
+                </div>
+                <div class="form-group">
+                    <label for="back_color">背景色</label>
+                    <input type="color" id="back_color" value="#ffffff">
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="form-group">
+                    <label for="error_correction">错误纠正</label>
+                    <select id="error_correction">
+                        <option value="L">L (7%)</option>
+                        <option value="M" selected>M (15%)</option>
+                        <option value="Q">Q (25%)</option>
+                        <option value="H">H (30%)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="module_style">样式</label>
+                    <select id="module_style">
+                        <option value="square" selected>方形</option>
+                        <option value="rounded">圆角</option>
+                        <option value="circle">圆形</option>
+                        <option value="vertical">竖条</option>
+                        <option value="horizontal">横条</option>
+                    </select>
+                </div>
+            </div>
+
+            <button class="btn-generate" onclick="generateQRCode()">生成二维码</button>
+        </div>
+
+        <div class="panel">
+            <div class="preview">
+                <div id="previewText" class="preview-text">预览区域</div>
+                <img id="result" style="display: none;">
+            </div>
+            <button class="btn-download" id="downloadBtn" onclick="downloadQRCode()">下载二维码</button>
+            <div class="error" id="error"></div>
+        </div>
+    </div>
+
+    <script>
+        function generateQRCode() {
+            const data = document.getElementById('data').value;
+            const size = document.getElementById('size').value;
+            const border = document.getElementById('border').value;
+            const fill_color = document.getElementById('fill_color').value;
+            const back_color = document.getElementById('back_color').value;
+            const error_correction = document.getElementById('error_correction').value;
+            const module_style = document.getElementById('module_style').value;
+
+            const errorDiv = document.getElementById('error');
+            const resultImg = document.getElementById('result');
+            const previewText = document.getElementById('previewText');
+            const downloadBtn = document.getElementById('downloadBtn');
+
+            errorDiv.style.display = 'none';
+
+            const formData = new FormData();
+            formData.append('data', data);
+            formData.append('size', size);
+            formData.append('border', border);
+            formData.append('fill_color', fill_color);
+            formData.append('back_color', back_color);
+            formData.append('error_correction', error_correction);
+            formData.append('module_style', module_style);
+
+            fetch('/generate', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => {
+                if (!response.ok) {
+                    return response.json().then(err => { throw err; });
+                }
+                return response.json();
+            })
+            .then(data => {
+                resultImg.src = data.image;
+                resultImg.style.display = 'block';
+                previewText.style.display = 'none';
+                downloadBtn.style.display = 'block';
+            })
+            .catch(err => {
+                errorDiv.textContent = err.error || '生成失败';
+                errorDiv.style.display = 'block';
+            });
+        }
+
+        function downloadQRCode() {
+            const data = document.getElementById('data').value;
+            const size = document.getElementById('size').value;
+            const border = document.getElementById('border').value;
+            const fill_color = document.getElementById('fill_color').value;
+            const back_color = document.getElementById('back_color').value;
+            const error_correction = document.getElementById('error_correction').value;
+            const module_style = document.getElementById('module_style').value;
+
+            const formData = new FormData();
+            formData.append('data', data);
+            formData.append('size', size);
+            formData.append('border', border);
+            formData.append('fill_color', fill_color);
+            formData.append('back_color', back_color);
+            formData.append('error_correction', error_correction);
+            formData.append('module_style', module_style);
+
+            fetch('/download', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.blob())
+            .then(blob => {
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'qrcode.png';
+                a.click();
+                URL.revokeObjectURL(url);
+            });
+        }
+
+        // 页面加载时自动生成一个示例
+        window.onload = function() {
+            generateQRCode();
+        };
+    </script>
+</body>
+</html>
